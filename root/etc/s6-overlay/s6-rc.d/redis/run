@@ -1,0 +1,10 @@
+#!/command/with-contenv bash
+# Internal Redis, bound to loopback only (never exposed outside the container).
+set -u
+
+ARGS=(--bind 127.0.0.1 --port "${REDIS_PORT:-6379}" --save "" --appendonly no)
+if [ -n "${REDIS_PASSWORD:-}" ]; then
+  ARGS+=(--requirepass "${REDIS_PASSWORD}")
+fi
+
+exec redis-server "${ARGS[@]}"

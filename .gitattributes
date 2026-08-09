@@ -1,0 +1,7 @@
+# Container/service scripts must stay LF or the shebangs break on Linux.
+* text=auto eol=lf
+*.sh text eol=lf
+root/** text eol=lf
+Dockerfile text eol=lf
+*.png binary
+*.ico binary

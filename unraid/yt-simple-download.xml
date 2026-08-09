@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>yt-simple-download</Name>
+  <Repository>ghcr.io/jamesgallagher/yt-simple-download:latest</Repository>
+  <Registry>https://github.com/jamesgallagher/yt-simple-download/pkgs/container/yt-simple-download</Registry>
+  <Network>bridge</Network>
+  <MyIP/>
+  <Shell>bash</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/jamesgallagher/yt-simple-download/issues</Support>
+  <Project>https://github.com/jamesgallagher/yt-simple-download</Project>
+  <Overview>
+    A tiny, private YouTube downloader. Paste a link, choose Audio (mp3) or
+    Video (mkv) and a quality, hit Download, and the finished file streams to
+    your phone or PC. All-in-one container (web + queue + worker + yt-dlp +
+    ffmpeg + Deno). Storage is ephemeral and self-cleaning. Single videos only
+    (playlists are rejected).
+    Basic auth is enabled by default via APP_USER / APP_PASSWORD — clear BOTH
+    to disable it (e.g. when fronted by Cloudflare + Google SSO).
+  </Overview>
+  <Category>MediaApp:Video MediaApp:Music Downloaders:</Category>
+  <WebUI>http://[IP]:[PORT:8080]/</WebUI>
+  <Icon>https://raw.githubusercontent.com/jamesgallagher/yt-simple-download/main/icon.png</Icon>
+  <ExtraParams/>
+  <PostArgs/>
+  <DonateText/>
+  <DonateLink/>
+  <Description>
+    Private, self-hosted YouTube downloader with a one-screen web UI. mp3/mkv,
+    quality selector, live progress, and direct-to-device download.
+  </Description>
+
+  <Config Name="WebUI Port" Target="8080" Default="8080" Mode="tcp" Description="Web UI / API port" Type="Port" Display="always" Required="true" Mask="false">8080</Config>
+
+  <Config Name="Downloads (temp)" Target="/downloads" Default="/mnt/user/appdata/yt-simple-download/downloads" Mode="rw" Description="Ephemeral working dir. Purged on start; swept after RETENTION_HOURS." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/yt-simple-download/downloads</Config>
+
+  <Config Name="Config (cookies)" Target="/config" Default="/mnt/user/appdata/yt-simple-download/config" Mode="rw" Description="Optional. Put a Netscape cookies.txt here and set YT_COOKIES to use it." Type="Path" Display="advanced" Required="false" Mask="false">/mnt/user/appdata/yt-simple-download/config</Config>
+
+  <Config Name="APP_USER" Target="APP_USER" Default="admin" Mode="" Description="Basic-auth username. Clear this AND APP_PASSWORD to disable auth." Type="Variable" Display="always" Required="false" Mask="false">admin</Config>
+
+  <Config Name="APP_PASSWORD" Target="APP_PASSWORD" Default="changeme" Mode="" Description="Basic-auth password. Change this. Clear it (and APP_USER) to disable auth." Type="Variable" Display="always" Required="false" Mask="true">changeme</Config>
+
+  <Config Name="WORKERS" Target="WORKERS" Default="1" Mode="" Description="Concurrent download workers (1-5)." Type="Variable" Display="always" Required="false" Mask="false">1</Config>
+
+  <Config Name="AUTO_UPDATE" Target="AUTO_UPDATE" Default="true" Mode="" Description="Self-update yt-dlp on container start (recommended)." Type="Variable" Display="always" Required="false" Mask="false">true</Config>
+
+  <Config Name="RETENTION_HOURS" Target="RETENTION_HOURS" Default="6" Mode="" Description="Delete finished files this many hours after creation." Type="Variable" Display="advanced" Required="false" Mask="false">6</Config>
+
+  <Config Name="YT_COOKIES" Target="YT_COOKIES" Default="" Mode="" Description="Optional path to a mounted cookies.txt, e.g. /config/cookies.txt" Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
+
+  <Config Name="EXTRA_YTDLP_ARGS" Target="EXTRA_YTDLP_ARGS" Default="" Mode="" Description="Optional extra yt-dlp CLI args, e.g. --limit-rate 5M" Type="Variable" Display="advanced" Required="false" Mask="false"></Config>
+</Container>

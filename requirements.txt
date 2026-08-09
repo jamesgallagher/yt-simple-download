@@ -1,0 +1,7 @@
+fastapi>=0.110
+uvicorn[standard]>=0.29
+jinja2>=3.1
+redis>=5.0
+rq>=1.16
+# yt-dlp is installed here but self-updated on container start when AUTO_UPDATE=true
+yt-dlp

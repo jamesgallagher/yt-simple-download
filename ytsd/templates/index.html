@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#16181f">
+  <title>yt-simple-download</title>
+  <link rel="icon" type="image/png" href="/static/icon.png">
+  <link rel="apple-touch-icon" href="/static/icon.png">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <main class="card">
+    <header class="head">
+      <img class="logo" src="/static/icon.png" alt="" width="56" height="56">
+      <div>
+        <h1>yt-simple-download</h1>
+        <p class="tag">Paste a link. Pick a format. Grab the file.</p>
+      </div>
+    </header>
+
+    <form id="form" autocomplete="off">
+      <label class="field">
+        <span>YouTube link</span>
+        <input id="url" name="url" type="url" inputmode="url" placeholder="https://www.youtube.com/watch?v=..." required>
+      </label>
+
+      <div class="row">
+        <div class="field">
+          <span>Format</span>
+          <div class="seg" role="tablist">
+            <input type="radio" name="format" id="fmt-mkv" value="mkv" checked>
+            <label for="fmt-mkv">Video · mkv</label>
+            <input type="radio" name="format" id="fmt-mp3" value="mp3">
+            <label for="fmt-mp3">Audio · mp3</label>
+          </div>
+        </div>
+
+        <label class="field">
+          <span id="quality-label">Quality</span>
+          <select id="quality" name="quality"></select>
+        </label>
+      </div>
+
+      <button id="submit" type="submit">Download</button>
+    </form>
+
+    <section id="status" class="status hidden" aria-live="polite">
+      <div class="status-head">
+        <span id="status-title" class="status-title">Working…</span>
+        <span id="status-stage" class="status-stage"></span>
+      </div>
+      <div class="bar"><div id="bar-fill" class="bar-fill"></div></div>
+      <div id="status-msg" class="status-msg"></div>
+      <a id="download-link" class="dl hidden" download>Save file</a>
+    </section>
+
+    <footer class="foot">
+      <span>Private downloader · single videos only</span>
+      <span class="ver">v{{ version }}</span>
+    </footer>
+  </main>
+
+  <script id="quality-data" type="application/json">
+    {"mkv": {{ video_qualities | tojson }}, "mp3": {{ audio_qualities | tojson }}}
+  </script>
+  <script src="/static/app.js"></script>
+</body>
+</html>

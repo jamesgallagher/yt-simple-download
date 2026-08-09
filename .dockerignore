@@ -1,0 +1,15 @@
+.git
+.gitignore
+.gitattributes
+.github
+unraid
+*.md
+.env
+.env.example
+__pycache__
+*.pyc
+.venv
+venv
+downloads
+config
+icon.svg

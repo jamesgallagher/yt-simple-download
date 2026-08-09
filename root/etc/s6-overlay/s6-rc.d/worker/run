@@ -1,0 +1,19 @@
+#!/command/with-contenv bash
+# RQ worker pool. WORKERS controls concurrency (clamped 1-5).
+set -u
+cd /app
+
+N="${WORKERS:-1}"
+case "${N}" in ''|*[!0-9]*) N=1 ;; esac
+if [ "${N}" -lt 1 ]; then N=1; fi
+if [ "${N}" -gt 5 ]; then N=5; fi
+
+if [ -n "${REDIS_PASSWORD:-}" ]; then
+  URL="redis://:${REDIS_PASSWORD}@127.0.0.1:${REDIS_PORT:-6379}/0"
+else
+  URL="redis://127.0.0.1:${REDIS_PORT:-6379}/0"
+fi
+export REDIS_URL="${REDIS_URL:-$URL}"
+
+echo "[ytsd] starting ${N} worker(s) on queue '${QUEUE_NAME:-downloads}'"
+exec rq worker-pool --num-workers "${N}" --url "${URL}" "${QUEUE_NAME:-downloads}"

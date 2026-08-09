@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# Local downloads / scratch
+downloads/
+config/
+*.mkv
+*.mp3
+*.part
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
