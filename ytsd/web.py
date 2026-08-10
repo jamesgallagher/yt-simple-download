@@ -22,7 +22,15 @@ from starlette.requests import Request
 
 from . import __version__
 from .config import settings
-from .jobs import AUDIO_QUALITIES, VIDEO_QUALITIES, download_job
+from .jobs import (
+    AUDIO_QUALITIES,
+    VIDEO_QUALITIES,
+    NotYouTubeURL,
+    PlaylistNotSupported,
+    download_job,
+    is_youtube_url,
+    probe_metadata,
+)
 from .queue import get_queue
 from .store import get_status, set_status
 
@@ -51,6 +59,10 @@ def require_auth(credentials: HTTPBasicCredentials | None = Depends(_security)) 
 
 
 # ---------------------------------------------------------------- models
+class ProbeRequest(BaseModel):
+    url: str
+
+
 class JobRequest(BaseModel):
     url: str
     format: str  # "mp3" | "mkv"
@@ -76,12 +88,32 @@ def healthz():
     return {"ok": True, "version": __version__}
 
 
+@app.post("/api/probe")
+def probe(req: ProbeRequest, _: None = Depends(require_auth)):
+    url = req.url.strip()
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        raise HTTPException(status_code=400, detail="Enter a valid http(s) URL.")
+    try:
+        return probe_metadata(url)
+    except NotYouTubeURL as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except PlaylistNotSupported:
+        raise HTTPException(status_code=400, detail="Playlists are not supported")
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=400, detail="Could not read that video. Check the link.")
+
+
 @app.post("/api/jobs")
 def create_job(req: JobRequest, _: None = Depends(require_auth)):
     url = req.url.strip()
     parsed = urlparse(url)
     if parsed.scheme not in ("http", "https") or not parsed.netloc:
         raise HTTPException(status_code=400, detail="Enter a valid http(s) URL.")
+    if not is_youtube_url(url):
+        raise HTTPException(status_code=400, detail="Only YouTube links are supported.")
 
     if req.format not in ("mp3", "mkv"):
         raise HTTPException(status_code=400, detail="Format must be mp3 or mkv.")

@@ -9,6 +9,7 @@ import os
 import shlex
 from pathlib import Path
 from typing import Optional
+from urllib.parse import urlparse
 
 from rq import get_current_job
 from yt_dlp import YoutubeDL
@@ -33,9 +34,59 @@ AUDIO_QUALITIES = {"best": "320", "320": "320", "192": "192", "128": "128"}
 
 MEDIA_MIME = {"mp3": "audio/mpeg", "mkv": "video/x-matroska"}
 
+# Base YouTube domains we accept (subdomains like m./music. are matched too).
+_YOUTUBE_DOMAINS = ("youtube.com", "youtu.be", "youtube-nocookie.com")
+
 
 class PlaylistNotSupported(Exception):
     pass
+
+
+class NotYouTubeURL(Exception):
+    pass
+
+
+def is_youtube_url(url: str) -> bool:
+    try:
+        host = urlparse(url).netloc.lower().split("@")[-1].split(":")[0]
+    except Exception:
+        return False
+    return any(host == d or host.endswith("." + d) for d in _YOUTUBE_DOMAINS)
+
+
+def probe_metadata(url: str) -> dict:
+    """Validate a URL is a single YouTube video and return light metadata.
+
+    Used by the web UI to preview the video and unlock the download button.
+    Raises NotYouTubeURL / PlaylistNotSupported / RuntimeError on failure.
+    """
+    if not is_youtube_url(url):
+        raise NotYouTubeURL("Enter a YouTube video link.")
+
+    opts = {"quiet": True, "no_warnings": True, "noplaylist": True, "skip_download": True}
+    if settings.cookies_file and os.path.exists(settings.cookies_file):
+        opts["cookiefile"] = settings.cookies_file
+
+    with YoutubeDL(opts) as ydl:
+        info = ydl.extract_info(url, download=False)
+
+    if info is None:
+        raise RuntimeError("Could not read that video.")
+    if info.get("_type") == "playlist" or info.get("entries") is not None:
+        raise PlaylistNotSupported()
+
+    vid = info.get("id") or ""
+    title = info.get("title") or "Untitled"
+    thumb = info.get("thumbnail") or (
+        f"https://i.ytimg.com/vi/{vid}/hqdefault.jpg" if vid else ""
+    )
+    return {
+        "id": vid,
+        "title": title,
+        "thumbnail": thumb,
+        "duration": info.get("duration"),
+        "uploader": info.get("uploader") or info.get("channel") or "",
+    }
 
 
 def _extra_opts(extra: str) -> dict:

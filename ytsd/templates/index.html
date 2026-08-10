@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#16181f">
-  <title>yt-simple-download</title>
+  <title>YouTube Simple Download</title>
   <link rel="icon" type="image/png" href="/static/icon.png">
   <link rel="apple-touch-icon" href="/static/icon.png">
   <link rel="stylesheet" href="/static/style.css">
@@ -14,15 +14,24 @@
     <header class="head">
       <img class="logo" src="/static/icon.png" alt="" width="56" height="56">
       <div>
-        <h1>yt-simple-download</h1>
+        <h1>YouTube Simple Download</h1>
         <p class="tag">Paste a link. Pick a format. Grab the file.</p>
       </div>
     </header>
 
     <form id="form" autocomplete="off">
+      <div id="preview" class="preview hidden">
+        <img id="preview-thumb" class="preview-thumb" alt="" width="120" height="68">
+        <div class="preview-meta">
+          <div id="preview-title" class="preview-title"></div>
+          <div id="preview-sub" class="preview-sub"></div>
+        </div>
+      </div>
+
       <label class="field">
         <span>YouTube link</span>
         <input id="url" name="url" type="url" inputmode="url" placeholder="https://www.youtube.com/watch?v=..." required>
+        <div id="url-msg" class="url-msg"></div>
       </label>
 
       <div class="row">
@@ -42,7 +51,7 @@
         </label>
       </div>
 
-      <button id="submit" type="submit">Download</button>
+      <button id="submit" type="submit" disabled>Download</button>
     </form>
 
     <section id="status" class="status hidden" aria-live="polite">

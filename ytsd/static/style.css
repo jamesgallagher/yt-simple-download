@@ -60,6 +60,41 @@ h1 {
 .field { display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; }
 .field > span { font-size: 0.82rem; color: var(--muted); font-weight: 600; }
 
+/* video preview (shown once a link validates) */
+.preview {
+  display: flex;
+  gap: 13px;
+  align-items: center;
+  padding: 10px;
+  margin-bottom: 16px;
+  background: var(--card-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.preview-thumb {
+  width: 120px;
+  height: 68px;
+  object-fit: cover;
+  border-radius: 10px;
+  flex: none;
+  background: #000;
+}
+.preview-meta { min-width: 0; }
+.preview-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.preview-sub { color: var(--muted); font-size: 0.8rem; margin-top: 4px; }
+
+.url-msg { font-size: 0.82rem; min-height: 1em; color: var(--muted); }
+.url-msg.error { color: #ff8a8a; }
+.url-msg.ok { color: var(--ok); }
+
 input[type="url"], select {
   width: 100%;
   padding: 13px 14px;
