@@ -7,7 +7,7 @@
   <title>YouTube Simple Download</title>
   <link rel="icon" type="image/png" href="/static/icon.png">
   <link rel="apple-touch-icon" href="/static/icon.png">
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/style.css?v={{ asset_ver }}">
 </head>
 <body>
   <main class="card">
@@ -73,6 +73,6 @@
   <script id="quality-data" type="application/json">
     {"mkv": {{ video_qualities | tojson }}, "mp3": {{ audio_qualities | tojson }}}
   </script>
-  <script src="/static/app.js"></script>
+  <script src="/static/app.js?v={{ asset_ver }}"></script>
 </body>
 </html>

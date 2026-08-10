@@ -36,6 +36,10 @@ from .store import get_status, set_status
 
 BASE_DIR = Path(__file__).resolve().parent
 
+# Changes every process start, so a new image never serves stale JS/CSS even if
+# Cloudflare or the browser cached the previous build's assets.
+ASSET_VER = str(int(time.time()))
+
 app = FastAPI(title="yt-simple-download", version=__version__)
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
@@ -77,6 +81,7 @@ def index(request: Request, _: None = Depends(require_auth)):
         "index.html",
         {
             "version": __version__,
+            "asset_ver": ASSET_VER,
             "video_qualities": list(VIDEO_QUALITIES.keys()),
             "audio_qualities": list(AUDIO_QUALITIES.keys()),
         },
