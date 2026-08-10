@@ -51,6 +51,23 @@
         </label>
       </div>
 
+      <label class="check">
+        <input type="checkbox" id="advanced">
+        <span>Advanced options</span>
+      </label>
+
+      <div id="advanced-opts" class="row hidden">
+        <label class="field">
+          <span>Start time</span>
+          <input id="start" type="text" inputmode="numeric" placeholder="e.g. 0:30">
+        </label>
+        <label class="field">
+          <span>End time</span>
+          <input id="end" type="text" inputmode="numeric" placeholder="e.g. 1:45">
+        </label>
+        <p class="hint">Trim to a portion of the video. Format: <code>SS</code>, <code>MM:SS</code>, or <code>HH:MM:SS</code>. Leave either blank for start/end of video.</p>
+      </div>
+
       <button id="submit" type="submit" disabled>Download</button>
     </form>
 

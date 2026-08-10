@@ -148,6 +148,39 @@ input[type="url"]:focus, select:focus {
   color: #fff;
 }
 
+/* advanced options */
+.check {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 2px 0 16px;
+  cursor: pointer;
+  user-select: none;
+}
+.check input {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--red);
+  cursor: pointer;
+}
+.check span { font-size: 0.9rem; color: var(--muted); font-weight: 600; }
+
+#advanced-opts { align-items: start; }
+.hint {
+  grid-column: 1 / -1;
+  margin: 2px 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.hint code {
+  background: #14161c;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 1px 5px;
+  font-size: 0.9em;
+}
+
 button#submit {
   width: 100%;
   padding: 14px;

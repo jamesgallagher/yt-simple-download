@@ -8,6 +8,11 @@
   const qualityLabel = document.getElementById("quality-label");
   const submitBtn = document.getElementById("submit");
 
+  const advancedCheck = document.getElementById("advanced");
+  const advancedOpts = document.getElementById("advanced-opts");
+  const startInput = document.getElementById("start");
+  const endInput = document.getElementById("end");
+
   const preview = document.getElementById("preview");
   const previewThumb = document.getElementById("preview-thumb");
   const previewTitle = document.getElementById("preview-title");
@@ -51,6 +56,11 @@
     r.addEventListener("change", fillQualities)
   );
   fillQualities();
+
+  // ------------------------------------------------------------ advanced options
+  advancedCheck.addEventListener("change", () => {
+    advancedOpts.classList.toggle("hidden", !advancedCheck.checked);
+  });
 
   // ------------------------------------------------------------ submit gating
   function updateSubmit() {
@@ -209,16 +219,22 @@
     setBar(4, null);
     setBusy(true);
 
+    const payload = {
+      url: urlInput.value.trim(),
+      format: currentFormat(),
+      quality: qualitySel.value,
+    };
+    if (advancedCheck.checked) {
+      payload.start = startInput.value.trim();
+      payload.end = endInput.value.trim();
+    }
+
     let resp;
     try {
       resp = await fetch("/api/jobs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url: urlInput.value.trim(),
-          format: currentFormat(),
-          quality: qualitySel.value,
-        }),
+        body: JSON.stringify(payload),
       });
     } catch (err) {
       showError("Could not reach the server.");

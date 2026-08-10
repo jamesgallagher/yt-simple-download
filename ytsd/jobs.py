@@ -112,7 +112,42 @@ def _extra_opts(extra: str) -> dict:
         return {}
 
 
-def _build_opts(media_format: str, quality: str, outdir: Path, base: str, hook) -> dict:
+def parse_timecode(value: Optional[str]) -> Optional[float]:
+    """Parse a timecode into seconds. Accepts SS, MM:SS, HH:MM:SS (decimals ok).
+
+    Returns None for blank input; raises ValueError for anything unparseable.
+    """
+    if value is None:
+        return None
+    s = value.strip()
+    if not s:
+        return None
+    try:
+        parts = [float(p) for p in s.split(":")]
+    except ValueError:
+        raise ValueError(f"Invalid time: {value!r}")
+    if len(parts) == 1:
+        seconds = parts[0]
+    elif len(parts) == 2:
+        seconds = parts[0] * 60 + parts[1]
+    elif len(parts) == 3:
+        seconds = parts[0] * 3600 + parts[1] * 60 + parts[2]
+    else:
+        raise ValueError(f"Invalid time: {value!r}")
+    if seconds < 0:
+        raise ValueError("Time cannot be negative.")
+    return float(seconds)
+
+
+def _build_opts(
+    media_format: str,
+    quality: str,
+    outdir: Path,
+    base: str,
+    hook,
+    start: Optional[float] = None,
+    end: Optional[float] = None,
+) -> dict:
     opts: dict = {
         "outtmpl": str(outdir / (base + ".%(ext)s")),
         "noplaylist": True,
@@ -127,6 +162,16 @@ def _build_opts(media_format: str, quality: str, outdir: Path, base: str, hook) 
     }
     if settings.cookies_file and os.path.exists(settings.cookies_file):
         opts["cookiefile"] = settings.cookies_file
+
+    # Trim to a time window (Advanced options). ffmpeg re-cuts at keyframes for
+    # accurate boundaries.
+    if start is not None or end is not None:
+        from yt_dlp.utils import download_range_func
+
+        s = start if start is not None else 0.0
+        e = end if end is not None else float("inf")
+        opts["download_ranges"] = download_range_func(None, [(s, e)])
+        opts["force_keyframes_at_cuts"] = True
 
     if media_format == "mp3":
         opts["format"] = "ba/b"
@@ -163,7 +208,13 @@ def _find_output(outdir: Path, ext: str) -> Optional[Path]:
     return files[0] if files else None
 
 
-def download_job(url: str, media_format: str, quality: str) -> dict:
+def download_job(
+    url: str,
+    media_format: str,
+    quality: str,
+    start: Optional[float] = None,
+    end: Optional[float] = None,
+) -> dict:
     job = get_current_job()
     job_id = job.id if job else "local"
 
@@ -205,7 +256,7 @@ def download_job(url: str, media_format: str, quality: str) -> dict:
         set_status(job_id, status="downloading", stage="Downloading",
                    progress=0, title=title)
 
-        opts = _build_opts(media_format, quality, outdir, base, hook)
+        opts = _build_opts(media_format, quality, outdir, base, hook, start=start, end=end)
         with YoutubeDL(opts) as ydl:
             ydl.download([url])
 

@@ -29,6 +29,7 @@ from .jobs import (
     PlaylistNotSupported,
     download_job,
     is_youtube_url,
+    parse_timecode,
     probe_metadata,
 )
 from .queue import get_queue
@@ -71,6 +72,8 @@ class JobRequest(BaseModel):
     url: str
     format: str  # "mp3" | "mkv"
     quality: str = "best"
+    start: str | None = None  # Advanced: trim start (SS / MM:SS / HH:MM:SS)
+    end: str | None = None    # Advanced: trim end
 
 
 # ---------------------------------------------------------------- routes
@@ -126,8 +129,17 @@ def create_job(req: JobRequest, _: None = Depends(require_auth)):
     allowed = AUDIO_QUALITIES if req.format == "mp3" else VIDEO_QUALITIES
     quality = req.quality if req.quality in allowed else "best"
 
+    # Advanced: optional trim window.
+    try:
+        start = parse_timecode(req.start)
+        end = parse_timecode(req.end)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    if start is not None and end is not None and end <= start:
+        raise HTTPException(status_code=400, detail="End time must be after start time.")
+
     job = get_queue().enqueue(
-        download_job, url, req.format, quality,
+        download_job, url, req.format, quality, start, end,
         job_timeout=settings.job_timeout,
         result_ttl=int(settings.retention_seconds),
         failure_ttl=int(settings.retention_seconds),
