@@ -2,7 +2,9 @@
   "use strict";
 
   const form = document.getElementById("form");
+  const providerSel = document.getElementById("provider");
   const urlInput = document.getElementById("url");
+  const urlLabel = document.getElementById("url-label");
   const urlMsg = document.getElementById("url-msg");
   const qualitySel = document.getElementById("quality");
   const qualityLabel = document.getElementById("quality-label");
@@ -25,46 +27,51 @@
   const barFill = document.getElementById("bar-fill");
   const dlLink = document.getElementById("download-link");
 
-  const QUALITIES = JSON.parse(document.getElementById("quality-data").textContent);
-  const PRETTY = { best: "Best available", "320": "320 kbps", "192": "192 kbps", "128": "128 kbps" };
+  const PROVIDERS = {};
+  JSON.parse(document.getElementById("providers-data").textContent)
+    .forEach((p) => { PROVIDERS[p.name] = p; });
 
   let pollTimer = null;
   let probeTimer = null;
-  let probeSeq = 0;      // guards against out-of-order probe responses
-  let validated = false; // a valid video is previewed
-  let busy = false;      // a download is in flight
+  let probeSeq = 0;
+  let validated = false;
+  let busy = false;
 
-  // ------------------------------------------------------------ quality
+  // ------------------------------------------------------------ helpers
   function currentFormat() {
     return document.querySelector('input[name="format"]:checked').value;
   }
+  function currentProvider() {
+    return PROVIDERS[providerSel.value] || Object.values(PROVIDERS)[0];
+  }
+  function prettyQuality(q) {
+    if (q === "best") return "Best available";
+    if (/^\d+p$/.test(q)) return q;
+    if (/^\d+$/.test(q)) return q + " kbps";
+    return q;
+  }
 
   function fillQualities() {
+    const prov = currentProvider();
     const fmt = currentFormat();
-    const opts = QUALITIES[fmt] || ["best"];
+    const opts = (fmt === "mp3" ? prov.audio : prov.video) || ["best"];
     qualitySel.innerHTML = "";
     for (const q of opts) {
       const o = document.createElement("option");
       o.value = q;
-      o.textContent = PRETTY[q] || q;
+      o.textContent = prettyQuality(q);
       qualitySel.appendChild(o);
     }
     qualityLabel.textContent = fmt === "mp3" ? "Audio quality" : "Max resolution";
   }
 
-  document.querySelectorAll('input[name="format"]').forEach((r) =>
-    r.addEventListener("change", fillQualities)
-  );
-  fillQualities();
-
-  // ------------------------------------------------------------ advanced options
-  advancedCheck.addEventListener("change", () => {
-    advancedOpts.classList.toggle("hidden", !advancedCheck.checked);
-  });
-
-  // ------------------------------------------------------------ submit gating
-  function updateSubmit() {
-    submitBtn.disabled = !(validated && !busy);
+  function applyProvider(name) {
+    const prov = PROVIDERS[name];
+    if (!prov) return;
+    providerSel.value = name;
+    urlInput.placeholder = prov.placeholder;
+    urlLabel.textContent = prov.display + " link";
+    fillQualities();
   }
 
   // ------------------------------------------------------------ preview / probe
@@ -75,17 +82,18 @@
     const pad = (n) => String(n).padStart(2, "0");
     return h ? `${h}:${pad(m)}:${pad(sec)}` : `${m}:${pad(sec)}`;
   }
-
   function resetPreview() {
     validated = false;
     preview.classList.add("hidden");
     previewThumb.removeAttribute("src");
     updateSubmit();
   }
-
   function setUrlMsg(text, cls) {
     urlMsg.textContent = text || "";
     urlMsg.className = "url-msg" + (cls ? " " + cls : "");
+  }
+  function updateSubmit() {
+    submitBtn.disabled = !(validated && !busy);
   }
 
   async function probe() {
@@ -107,10 +115,10 @@
       if (seq === probeSeq) setUrlMsg("Could not reach the server.", "error");
       return;
     }
-    if (seq !== probeSeq) return; // a newer probe superseded this one
+    if (seq !== probeSeq) return;
 
     if (!resp.ok) {
-      let detail = "That doesn't look like a YouTube video.";
+      let detail = "That link isn't supported.";
       try { detail = (await resp.json()).detail || detail; } catch (e) {}
       setUrlMsg(detail, "error");
       return;
@@ -119,9 +127,16 @@
     const meta = await resp.json();
     if (seq !== probeSeq) return;
 
+    // Sync the selector to the detected service.
+    if (meta.provider && PROVIDERS[meta.provider]) applyProvider(meta.provider);
+
+    previewThumb.onerror = () => { previewThumb.style.visibility = "hidden"; };
+    previewThumb.onload = () => { previewThumb.style.visibility = "visible"; };
+    previewThumb.style.visibility = "visible";
     previewThumb.src = meta.thumbnail || "";
     previewTitle.textContent = meta.title || "Untitled";
     const bits = [];
+    if (meta.provider_display) bits.push(meta.provider_display);
     if (meta.uploader) bits.push(meta.uploader);
     const dur = fmtDuration(meta.duration);
     if (dur) bits.push(dur);
@@ -133,6 +148,17 @@
     updateSubmit();
   }
 
+  // ------------------------------------------------------------ wiring
+  document.querySelectorAll('input[name="format"]').forEach((r) =>
+    r.addEventListener("change", fillQualities)
+  );
+  providerSel.addEventListener("change", () => {
+    applyProvider(providerSel.value);
+    if (urlInput.value.trim()) probe();
+  });
+  advancedCheck.addEventListener("change", () => {
+    advancedOpts.classList.toggle("hidden", !advancedCheck.checked);
+  });
   urlInput.addEventListener("input", () => {
     validated = false;
     updateSubmit();
@@ -140,16 +166,16 @@
     probeTimer = setTimeout(probe, 500);
   });
 
+  applyProvider(providerSel.value);
+
   // ------------------------------------------------------------ status bar
   function setBar(pct, cls) {
     barFill.style.width = Math.max(0, Math.min(100, pct)) + "%";
     barFill.className = "bar-fill" + (cls ? " " + cls : "");
   }
-
   function stopPolling() {
     if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; }
   }
-
   function setBusy(on) {
     busy = on;
     submitBtn.textContent = on ? "Working…" : "Download";
@@ -179,7 +205,7 @@
       statusMsg.textContent = "Ready: " + j.filename;
       dlLink.href = "/api/jobs/" + encodeURIComponent(id) + "/file";
       dlLink.classList.remove("hidden");
-      dlLink.click(); // auto-start the download to the device
+      dlLink.click();
       setBusy(false);
       return;
     }
@@ -221,6 +247,7 @@
 
     const payload = {
       url: urlInput.value.trim(),
+      provider: providerSel.value,
       format: currentFormat(),
       quality: qualitySel.value,
     };

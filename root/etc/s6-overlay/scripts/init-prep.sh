@@ -13,7 +13,8 @@ AU="$(printf '%s' "${AUTO_UPDATE:-true}" | tr '[:upper:]' '[:lower:]')"
 case "${AU}" in
   1|true|yes|on)
     echo "[ytsd] init: updating yt-dlp"
-    pip install --no-cache-dir --upgrade yt-dlp \
+    # [default] keeps curl_cffi (impersonation backend) upgraded compatibly.
+    pip install --no-cache-dir --upgrade "yt-dlp[default]" \
       || echo "[ytsd] WARN: yt-dlp update failed, continuing with bundled version"
     ;;
   *)

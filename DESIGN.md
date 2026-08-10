@@ -10,6 +10,28 @@ The locked design this repo implements.
 - **Secrets out of the repo** — everything via env vars.
 - **Builds itself** — push to GitHub → image on GHCR → Unraid installs it.
 
+## Providers (multi-service)
+
+Each supported service is its own pipeline: an abstract `Provider` base
+(`ytsd/providers/base.py`) carries the shared, YouTube-proven machinery (format
+ladder, mp3/mkv contract, trim sections, escape hatch), and one subclass per
+service declares what differs — domains, quality ceilings, cookies, `curl_cffi`
+impersonation, playlist policy, and thumbnails.
+
+| Service | Impersonation | Cookies | Playlist | Notes |
+|---|---|---|---|---|
+| YouTube | no | optional (`YT_COOKIES`) | reject | Unchanged from the original. |
+| Facebook | yes | `FB_COOKIES` (private) | reject | Public best-effort. |
+| Reddit | no | `REDDIT_COOKIES` (NSFW) | reject | ffmpeg merges v.redd.it A/V. |
+| X | yes | `X_COOKIES` (sensitive) | first | Multi-clip tweet → first video. |
+| Instagram | yes | `IG_COOKIES` (**usually required**) | first | Login-walled; gentle request pace. |
+| TikTok | yes | `TIKTOK_COOKIES` (region/age) | reject | Public works; photo posts may not. |
+
+URL detection is authoritative (`detect(url)`); the UI service selector is a
+convenience that auto-syncs to the detected service. Impersonation targets are
+resolved from what yt-dlp reports as actually available, so a missing/mismatched
+`curl_cffi` degrades to plain requests instead of hard-failing.
+
 ## Architecture
 
 Single Docker image supervised by **s6-overlay**, running three long services

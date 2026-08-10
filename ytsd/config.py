@@ -54,6 +54,9 @@ class Settings:
     # Optional cookies file (age-restricted / bot-check content).
     cookies_file: str = os.environ.get("YT_COOKIES", "").strip()
 
+    # Directory holding per-provider cookie files, e.g. /config/cookies/x.txt.
+    cookies_dir: str = os.environ.get("COOKIES_DIR", "/config/cookies").strip() or "/config/cookies"
+
     # Raw extra args passed through to yt-dlp (advanced / escape hatch).
     extra_ytdlp_args: str = os.environ.get("EXTRA_YTDLP_ARGS", "").strip()
 

@@ -3,5 +3,9 @@ uvicorn[standard]>=0.29
 jinja2>=3.1
 redis>=5.0
 rq>=1.16
-# yt-dlp is installed here but self-updated on container start when AUTO_UPDATE=true
-yt-dlp
+# curl_cffi enables the browser impersonation Facebook, X, Instagram and TikTok
+# need. Pinned to yt-dlp's supported range (it refuses >=0.16); yt-dlp[default]
+# would pull it too, but pinning guarantees it survives AUTO_UPDATE.
+curl_cffi>=0.10,<0.16
+# yt-dlp[default] bundles curl_cffi + extras. Self-updated on start (AUTO_UPDATE).
+yt-dlp[default]

@@ -22,16 +22,8 @@ from starlette.requests import Request
 
 from . import __version__
 from .config import settings
-from .jobs import (
-    AUDIO_QUALITIES,
-    VIDEO_QUALITIES,
-    NotYouTubeURL,
-    PlaylistNotSupported,
-    download_job,
-    is_youtube_url,
-    parse_timecode,
-    probe_metadata,
-)
+from .jobs import download_job, parse_timecode
+from .providers import DEFAULT_PROVIDER, PlaylistNotSupported, catalog, detect
 from .queue import get_queue
 from .store import get_status, set_status
 
@@ -70,6 +62,7 @@ class ProbeRequest(BaseModel):
 
 class JobRequest(BaseModel):
     url: str
+    provider: str | None = None  # selector hint; URL detection is authoritative
     format: str  # "mp3" | "mkv"
     quality: str = "best"
     start: str | None = None  # Advanced: trim start (SS / MM:SS / HH:MM:SS)
@@ -85,8 +78,8 @@ def index(request: Request, _: None = Depends(require_auth)):
         {
             "version": __version__,
             "asset_ver": ASSET_VER,
-            "video_qualities": list(VIDEO_QUALITIES.keys()),
-            "audio_qualities": list(AUDIO_QUALITIES.keys()),
+            "providers": catalog(),
+            "default_provider": DEFAULT_PROVIDER,
         },
     )
 
@@ -102,16 +95,26 @@ def probe(req: ProbeRequest, _: None = Depends(require_auth)):
     parsed = urlparse(url)
     if parsed.scheme not in ("http", "https") or not parsed.netloc:
         raise HTTPException(status_code=400, detail="Enter a valid http(s) URL.")
+
+    provider = detect(url)
+    if provider is None:
+        raise HTTPException(status_code=400, detail="That link isn't from a supported service.")
+
     try:
-        return probe_metadata(url)
-    except NotYouTubeURL as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
+        meta = provider.probe(url)
     except PlaylistNotSupported:
         raise HTTPException(status_code=400, detail="Playlists are not supported")
-    except HTTPException:
-        raise
     except Exception:
-        raise HTTPException(status_code=400, detail="Could not read that video. Check the link.")
+        # If the service likely needs cookies and none are configured, say so.
+        if provider.auth_hint and provider.cookie_file() is None:
+            detail = provider.auth_hint
+        else:
+            detail = f"Could not read that {provider.display_name} link. Check it."
+        raise HTTPException(status_code=400, detail=detail)
+
+    meta["provider"] = provider.name
+    meta["provider_display"] = provider.display_name
+    return meta
 
 
 @app.post("/api/jobs")
@@ -120,13 +123,15 @@ def create_job(req: JobRequest, _: None = Depends(require_auth)):
     parsed = urlparse(url)
     if parsed.scheme not in ("http", "https") or not parsed.netloc:
         raise HTTPException(status_code=400, detail="Enter a valid http(s) URL.")
-    if not is_youtube_url(url):
-        raise HTTPException(status_code=400, detail="Only YouTube links are supported.")
+
+    provider = detect(url)
+    if provider is None:
+        raise HTTPException(status_code=400, detail="That link isn't from a supported service.")
 
     if req.format not in ("mp3", "mkv"):
         raise HTTPException(status_code=400, detail="Format must be mp3 or mkv.")
 
-    allowed = AUDIO_QUALITIES if req.format == "mp3" else VIDEO_QUALITIES
+    allowed = provider.audio_qualities if req.format == "mp3" else provider.video_qualities
     quality = req.quality if req.quality in allowed else "best"
 
     # Advanced: optional trim window.
@@ -139,7 +144,7 @@ def create_job(req: JobRequest, _: None = Depends(require_auth)):
         raise HTTPException(status_code=400, detail="End time must be after start time.")
 
     job = get_queue().enqueue(
-        download_job, url, req.format, quality, start, end,
+        download_job, url, provider.name, req.format, quality, start, end,
         job_timeout=settings.job_timeout,
         result_ttl=int(settings.retention_seconds),
         failure_ttl=int(settings.retention_seconds),

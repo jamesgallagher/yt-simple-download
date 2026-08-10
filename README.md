@@ -1,8 +1,14 @@
 # yt-simple-download
 
-A tiny, private, self-hosted YouTube downloader. Paste a link, pick **Audio (mp3)**
-or **Video (mkv)** and a quality, hit **Download** — the finished file streams
-straight to your phone or PC.
+A tiny, private, self-hosted video downloader. Pick a **service**, paste a link,
+choose **Audio (mp3)** or **Video (mkv)** and a quality, hit **Download** — the
+finished file streams straight to your phone or PC.
+
+**Services:** YouTube, Facebook, Reddit, X, Instagram, TikTok — each with its own
+pipeline (see [`ytsd/providers/`](ytsd/providers)). YouTube works anonymously;
+the rest use `curl_cffi` impersonation and take optional per-service login
+cookies (Instagram effectively requires them). Paste a link and the service is
+auto-detected.
 
 <p align="center"><img src="icon.png" width="112" alt="app icon"></p>
 

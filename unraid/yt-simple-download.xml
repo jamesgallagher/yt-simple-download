@@ -10,11 +10,14 @@
   <Support>https://github.com/jamesgallagher/yt-simple-download/issues</Support>
   <Project>https://github.com/jamesgallagher/yt-simple-download</Project>
   <Overview>
-    A tiny, private YouTube downloader. Paste a link, choose Audio (mp3) or
-    Video (mkv) and a quality, hit Download, and the finished file streams to
-    your phone or PC. All-in-one container (web + queue + worker + yt-dlp +
-    ffmpeg + Deno). Storage is ephemeral and self-cleaning. Single videos only
-    (playlists are rejected).
+    A tiny, private video downloader for YouTube, Facebook, Reddit, X, Instagram
+    and TikTok. Pick a service, paste a link, choose Audio (mp3) or Video (mkv)
+    and a quality, hit Download, and the finished file streams to your phone or
+    PC. All-in-one container (web + queue + worker + yt-dlp + curl_cffi + ffmpeg
+    + Deno). Storage is ephemeral and self-cleaning. Single videos only.
+    YouTube works anonymously; the others may need per-service login cookies
+    (Instagram effectively requires them) — drop &lt;service&gt;.txt files into the
+    cookies dir mapped below.
     Basic auth is enabled by default via APP_USER / APP_PASSWORD — clear BOTH
     to disable it (e.g. when fronted by Cloudflare + Google SSO).
   </Overview>
@@ -34,7 +37,7 @@
 
   <Config Name="Downloads (temp)" Target="/downloads" Default="/mnt/user/appdata/yt-simple-download/downloads" Mode="rw" Description="Ephemeral working dir. Purged on start; swept after RETENTION_HOURS." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/yt-simple-download/downloads</Config>
 
-  <Config Name="Config (cookies)" Target="/config" Default="/mnt/user/appdata/yt-simple-download/config" Mode="rw" Description="Optional. Put a Netscape cookies.txt here and set YT_COOKIES to use it." Type="Path" Display="advanced" Required="false" Mask="false">/mnt/user/appdata/yt-simple-download/config</Config>
+  <Config Name="Config (cookies)" Target="/config" Default="/mnt/user/appdata/yt-simple-download/config" Mode="rw" Description="Optional. Put per-service cookie files in /config/cookies (youtube.txt, facebook.txt, reddit.txt, x.txt, instagram.txt, tiktok.txt)." Type="Path" Display="advanced" Required="false" Mask="false">/mnt/user/appdata/yt-simple-download/config</Config>
 
   <Config Name="APP_USER" Target="APP_USER" Default="admin" Mode="" Description="Basic-auth username. Clear this AND APP_PASSWORD to disable auth." Type="Variable" Display="always" Required="false" Mask="false">admin</Config>
 

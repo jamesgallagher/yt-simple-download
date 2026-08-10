@@ -1,3 +1,7 @@
-"""yt-simple-download: a tiny paste-a-link YouTube downloader."""
+"""yt-simple-download: a tiny paste-a-link video downloader.
 
-__version__ = "0.3.0"
+Supports YouTube, Facebook, Reddit, X, Instagram and TikTok via pluggable
+per-service provider pipelines (ytsd/providers).
+"""
+
+__version__ = "0.4.0"
